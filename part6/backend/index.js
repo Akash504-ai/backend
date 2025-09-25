@@ -1,0 +1,20 @@
+import express from "express"
+import dotenv from "dotenv"
+import connectDB from "./config/db.js"
+import authrouter from "./routes/auth.routes.js"
+
+dotenv.config()
+const app = express()
+const PORT = process.env.PORT || 4000
+
+app.use(express.json())
+app.use("/api",authrouter)
+
+app.get('/', (req, res) => {
+  res.send('Hello World!')
+})
+
+app.listen(PORT, () => {
+  connectDB()
+  console.log(`Example app listening on port ${PORT}`)
+})
