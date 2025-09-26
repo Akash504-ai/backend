@@ -1,31 +1,56 @@
 import React, { useContext, useState } from "react";
 import { dataContext } from "../../context/UserContext";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const Signup = () => {
-  let {serverUrl} = useContext(dataContext)
-  // Hooks go **inside** the component
+  let { serverUrl, userData, setUserData, getUserdata } =
+    useContext(dataContext);
+  let navigate = useNavigate();
+
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [userName, setUserName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handelSingUp = async(e) => {
-    e.preventDefault()
+  // Image states
+  const [frontendIMG, setFrontendIMG] = useState(null); // preview
+  const [backendIMG, setBackendIMG] = useState(null); // file for backend
+
+  const handelSingUp = async (e) => {
+    e.preventDefault();
+
     try {
-      let data = await axios.post(serverUrl + "/api/signup",{
-        firstName,
-        lastName,
-        userName,
-        email,
-        password
-      },{withCredentials:true})
-      console.log(data);
+      const formData = new FormData();
+      formData.append("firstName", firstName);
+      formData.append("lastName", lastName);
+      formData.append("userName", userName);
+      formData.append("email", email);
+      formData.append("password", password);
+      if (backendIMG) formData.append("profileImage", backendIMG);
+
+      let { data } = await axios.post(serverUrl + "/api/signup", formData, {
+        withCredentials: true,
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      await getUserdata();
+      setUserData(data.user);
+      navigate("/");
+      // console.log("Signup success:", data);
     } catch (error) {
-      console.log(error.message);
+      console.log("Signup error:", error.message);
     }
-  }
+  };
+
+  // 📌 Handle Image Upload
+  const handelImage = (e) => {
+    let file = e.target.files[0];
+    setBackendIMG(file);
+    let image = URL.createObjectURL(file);
+    setFrontendIMG(image);
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-6">
@@ -34,18 +59,27 @@ const Signup = () => {
           Create Account
         </h1>
 
-        <form className="space-y-4"
-              onSubmit={handelSingUp}>
+        <form className="space-y-4" onSubmit={handelSingUp}>
           {/* Upload Image */}
           <div className="flex justify-center">
-            <label className="w-24 h-24 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-full cursor-pointer hover:border-indigo-500 transition">
-              <input type="file" className="hidden" />
-              <img
-                src="https://cdn-icons-png.flaticon.com/512/847/847969.png"
-                alt="Upload"
-                className="w-10 h-10 opacity-60"
-              />
-              <span className="text-xs text-gray-500 mt-1">Upload</span>
+            <label className="w-22 h-26 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-full cursor-pointer hover:border-indigo-500 transition relative overflow-hidden">
+              <input type="file" className="hidden" onChange={handelImage} />
+              {frontendIMG ? (
+                <img
+                  src={frontendIMG}
+                  alt="Preview"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <>
+                  <img
+                    src="https://cdn-icons-png.flaticon.com/512/847/847969.png"
+                    alt="Upload"
+                    className="w-10 h-10 opacity-60"
+                  />
+                  <span className="text-xs text-gray-500 mt-1">Upload</span>
+                </>
+              )}
             </label>
           </div>
 
@@ -93,15 +127,17 @@ const Signup = () => {
           </button>
         </form>
 
-        <p className="text-sm text-gray-600 text-center mt-4">
-          Already have an account?{" "}
-          <a
-            href="/login"
-            className="text-indigo-600 font-medium hover:underline"
-          >
-            Login
-          </a>
-        </p>
+        <div className="flex items-center justify-center">
+          <p className="text-sm text-gray-600 text-center mt-4 flex">
+            Already have an account?{" "}
+            <span
+              onClick={() => navigate("/login")}
+              className="ml-1 text-indigo-600 font-medium hover:underline cursor-pointer"
+            >
+              Login
+            </span>
+          </p>
+        </div>
       </div>
     </div>
   );

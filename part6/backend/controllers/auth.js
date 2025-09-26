@@ -1,3 +1,4 @@
+import uplodeIMGonCloudinary from "../config/cloudinary.js";
 import generateToken from "../config/token.js";
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs"
@@ -8,6 +9,11 @@ export const signup = async(req,res) => {
 
     if(!firstName || !lastName || !email || !password || !userName){
       return res.status(400).json({message:"Send all details"})
+    }
+
+    let profileImage;
+    if(req.file){
+      profileImage = await uplodeIMGonCloudinary(req.file.path)
     }
 
     let existUser = await User.findOne({email:email})
@@ -22,7 +28,8 @@ export const signup = async(req,res) => {
       lastName:lastName,
       email:email,
       password:hashedPassword,
-      userName:userName
+      userName:userName,
+      profileimage:profileImage
     })
     
     let token;
@@ -44,7 +51,8 @@ export const signup = async(req,res) => {
       firstName:firstName,
       lastName:lastName,
       email:email, 
-      userName:userName
+      userName:userName,
+      profileImage:profileImage
     }})
 
   } catch (error) {
@@ -85,7 +93,8 @@ export const login = async(req,res) => {
       firstName:existUser.firstName,
       lastName:existUser.lastName,
       email:existUser.email, 
-      userName:existUser.userName
+      userName:existUser.userName,
+      profileImage:existUser.profileimage
     }})
 
   } catch (error) {
@@ -99,5 +108,21 @@ export const logout = async(req,res) => {
     return res.status(200).json({message:"logout successfully"})
   } catch (error) {
     return res.status(500).json(error)
+  }
+}
+
+export const getUserData = async(req,res) => {
+  try {
+    let userID = req.userID
+    if(!userID){
+      return res.status(400).json({message:"User not found"})
+    }
+    let user = await User.findById(userID)
+    if(!user){
+      return res.status(400).json({message:"User not found"})
+    }
+    return res.status(200).json(user)
+  } catch (error) {
+    return res.status(500).json({message:error})
   }
 }
